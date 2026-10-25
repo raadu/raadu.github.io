@@ -1,7 +1,8 @@
 // Assemble one static page per role from templates/resume.html and roles/<role>/*.html.
 // A role overrides a slot by having a <slot>.html file; otherwise roles/fullstack/<slot>.html is used.
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 interface Page {
@@ -32,6 +33,29 @@ class BuildError extends Error {}
 function readSnippet(path: string): string {
   // Drop the trailing newline most editors add, so the snippet fits its slot exactly
   return readFileSync(path, "utf8").replace(/\r?\n$/, "");
+}
+
+// Local href/src values, e.g. "../css/resume.css" or "../icons/skill-icons.svg#react"
+const LOCAL_ASSET_PATTERN = /\b(href|src)="([^"#?:]+)(#[^"]*)?"/g;
+const assetHashes = new Map<string, string>();
+
+function assetHash(path: string): string {
+  let hash = assetHashes.get(path);
+  if (hash === undefined) {
+    hash = createHash("sha256").update(readFileSync(path)).digest("hex").slice(0, 8);
+    assetHashes.set(path, hash);
+  }
+  return hash;
+}
+
+// GitHub Pages lets browsers cache files for 10 minutes, so a changed file keeps its old
+// cached copy. Adding ?v=<content hash> gives each version of a file its own URL.
+function versionAssets(html: string, pageDir: string): string {
+  return html.replace(LOCAL_ASSET_PATTERN, (match, attr: string, url: string, fragment: string | undefined) => {
+    const file = join(pageDir, url);
+    if (!existsSync(file) || !statSync(file).isFile()) return match;
+    return `${attr}="${url}?v=${assetHash(file)}${fragment ?? ""}"`;
+  });
 }
 
 function roleFiles(role: string): string[] {
@@ -65,6 +89,8 @@ function build(): void {
       return readSnippet(existsSync(override) ? override : join(ROLES_DIR, DEFAULT_ROLE, `${slot}.html`));
     });
     html = html.replaceAll("{{root}}", root);
+    const outPath = join(REPO, out);
+    html = versionAssets(html, dirname(outPath));
 
     const firstLineEnd = html.indexOf(eol);
     html = html.slice(0, firstLineEnd + eol.length) + GENERATED_NOTE + eol + html.slice(firstLineEnd + eol.length);
@@ -74,7 +100,6 @@ function build(): void {
       throw new BuildError(`${out}: unfilled placeholder near "${html.slice(leftover.index, leftover.index + 40)}"`);
     }
 
-    const outPath = join(REPO, out);
     mkdirSync(dirname(outPath), { recursive: true });
     writeFileSync(outPath, html);
     console.log(`built ${out}`);
