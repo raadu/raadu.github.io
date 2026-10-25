@@ -17,6 +17,7 @@ const PAGES: readonly Page[] = [
   { role: "frontend", out: "frontend/index.html", root: "../" },
   { role: "ai", out: "ai/index.html", root: "../" },
   { role: "web3", out: "web3/index.html", root: "../" },
+  { role: "blockchain", out: "blockchain/index.html", root: "../" },
   { role: "blue", out: "blue/index.html", root: "../" },
 ];
 

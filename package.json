@@ -3,10 +3,10 @@
   "scripts": {
     "build": "npm run build:js && npm run build:pages",
     "build:js": "tsc",
-    "build:pages": "tsc -p tsconfig.scripts.json && node .build/build-pages.js",
+    "build:pages": "tsc -p scripts && node .build/build-pages.js",
     "watch": "tsc --watch",
-    "watch:pages": "tsc -p tsconfig.scripts.json && node --watch-path=templates --watch-path=roles .build/build-pages.js",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.scripts.json --noEmit"
+    "watch:pages": "tsc -p scripts && node --watch-path=templates --watch-path=roles .build/build-pages.js",
+    "typecheck": "tsc --noEmit && tsc -p scripts --noEmit"
   },
   "devDependencies": {
     "@types/node": "26.6.5",

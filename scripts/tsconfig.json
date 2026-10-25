@@ -5,8 +5,8 @@
     "moduleResolution": "nodenext",
     "lib": ["ES2022"],
     "types": ["node"],
-    "rootDir": "scripts",
-    "outDir": ".build",
+    "rootDir": ".",
+    "outDir": "../.build",
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
@@ -16,5 +16,5 @@
     "exactOptionalPropertyTypes": true,
     "sourceMap": false
   },
-  "include": ["scripts"]
+  "include": ["."]
 }
