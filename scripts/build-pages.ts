@@ -2,7 +2,7 @@
 // A role overrides a slot by having a <slot>.html file; otherwise roles/fullstack/<slot>.html is used.
 
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, watch, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 interface Page {
@@ -65,6 +65,7 @@ function roleFiles(role: string): string[] {
 
 function build(): void {
   const template = readFileSync(TEMPLATE_PATH, "utf8");
+  assetHashes.clear(); // in watch mode, files may have changed since the last build
   const slots = new Set(Array.from(template.matchAll(SLOT_PATTERN), (m) => m[1] ?? ""));
   const eol = template.includes("\r\n") ? "\r\n" : "\n";
 
@@ -106,13 +107,35 @@ function build(): void {
   }
 }
 
-try {
-  build();
-} catch (error: unknown) {
-  if (error instanceof BuildError) {
-    console.error(`build-pages: ${error.message}`);
-    process.exitCode = 1;
-  } else {
-    throw error;
+// In watch mode any error is reported and the watcher keeps running, e.g. when a file
+// is read halfway through being saved
+function runBuild(watching: boolean): boolean {
+  try {
+    build();
+    return true;
+  } catch (error: unknown) {
+    if (!(error instanceof BuildError) && !watching) throw error;
+    console.error(`build-pages: ${error instanceof Error ? error.message : String(error)}`);
+    return false;
   }
+}
+
+const WATCH_DIRS = ["templates", "roles", "css", "js", "icons"];
+
+if (process.argv.includes("--watch")) {
+  runBuild(true);
+  // Several saves in quick succession trigger a single rebuild
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  for (const dir of WATCH_DIRS) {
+    watch(join(REPO, dir), { recursive: true }, () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        console.log("change detected, rebuilding");
+        runBuild(true);
+      }, 100);
+    });
+  }
+  console.log(`watching ${WATCH_DIRS.join(", ")} for changes`);
+} else if (!runBuild(false)) {
+  process.exitCode = 1;
 }
