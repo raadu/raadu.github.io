@@ -5,7 +5,7 @@
     "build:js": "tsc",
     "build:pages": "tsc -p scripts && node .build/build-pages.js",
     "watch": "tsc --watch",
-    "watch:pages": "tsc -p scripts && node --watch-path=templates --watch-path=roles .build/build-pages.js",
+    "watch:pages": "tsc -p scripts && node --watch-path=templates --watch-path=roles --watch-path=css --watch-path=js --watch-path=icons .build/build-pages.js",
     "typecheck": "tsc --noEmit && tsc -p scripts --noEmit"
   },
   "devDependencies": {
