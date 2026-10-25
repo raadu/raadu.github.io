@@ -1,11 +1,15 @@
 {
   "private": true,
   "scripts": {
-    "build": "tsc",
+    "build": "npm run build:js && npm run build:pages",
+    "build:js": "tsc",
+    "build:pages": "tsc -p tsconfig.scripts.json && node .build/build-pages.js",
     "watch": "tsc --watch",
-    "typecheck": "tsc --noEmit"
+    "watch:pages": "tsc -p tsconfig.scripts.json && node --watch-path=templates --watch-path=roles .build/build-pages.js",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.scripts.json --noEmit"
   },
   "devDependencies": {
+    "@types/node": "26.6.5",
     "typescript": "7.0.2"
   }
 }
